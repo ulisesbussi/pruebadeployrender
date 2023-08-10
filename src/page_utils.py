@@ -7,7 +7,7 @@ import json
 import scipy.fft as fft
 from plotly.subplots import make_subplots
 #----------- Dataset de Nakamura ----------------
-file_name= "../41567_2020_1019_MOESM11_ESM.csv"
+file_name= "41567_2020_1019_MOESM11_ESM.csv"
 
 #---------------------Dataset functions------------------------------
 def get_dataset():
