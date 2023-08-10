@@ -1,0 +1,80 @@
+
+.navbar{
+    font-size: 20px;
+
+}
+
+.container-flex{ /*usando container en vez de div en layout*/
+    max-width: 100%;
+    /*background-color: #2f2f2f;*/
+    /*border-radius: 2%;*/
+}
+
+.container-100p{
+width: 100%;
+margin: 0px 0px 0px 0px;
+}
+.col50width{
+    width: 50%;
+    height: 70%;
+    margin-left: 0px;
+    margin-right: 10px;
+    
+}
+
+.row1-3d{
+    height: 75vh;
+    display: flex
+}
+
+.vert-slide-col{
+    display: flex;
+}
+.rgsliderV {
+    height: 100%!important;
+    display: flex;
+    
+}
+ 
+
+.rgsliderv-pajama-3dplot{
+    height: 100%!important;
+    display: flex;
+}
+
+
+.fig3d{
+    height: 100%;
+    margin: 0px;
+}
+
+.user-select-none svg-container{
+    width: 100%;
+}
+
+.infolayer{
+    width: 10%;
+}
+
+
+.pajama-short-fig{
+    width: 100%;
+    height: 70%;
+}
+
+.pajama-narrow-fig{
+    width: 100%;
+}
+.pajama-row1{
+    height: 20%;
+}
+
+.pajama-row2{
+    height: 80%;
+}
+
+.pajama-input{
+    width: 100%;
+    height: 100%;
+    margin: 0px 0px 0px 0px;
+}
