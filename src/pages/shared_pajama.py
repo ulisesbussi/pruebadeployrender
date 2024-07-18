@@ -10,18 +10,27 @@ import dash_bootstrap_components as dbc
 from dash_bootstrap_components import Col, Row
 import pandas as pd
 from plotly import graph_objs as go
+
 from dash_bootstrap_templates import load_figure_template
+load_figure_template("slate")
+
 import numpy as np
 import json
 
-import utils_pajama as utpj
+
+
+#import utils_pajama as utpj
+from utils import pajama as utpj
 
 #%%
 
 
-import page_utils as pgut
-B,V,r = pgut.get_dataset()
 
+from utils import page as pgut
+
+
+B,V,r = pgut.dd
+data = pgut.dd_data
 
 f_img = utpj.create_fig_and_cnf()
 f_img = utpj.draw_img_trace(f_img,B,V,r)
@@ -36,12 +45,11 @@ f_b = utpj.draw_Bcte_trace(f_b,B,V,r)
 #%%
 
 
-def create_idx_rangeslider(id,vec,n_marks=6,unit='',vertical=False, 
+def create_idx_rangeslider(id,vec,n_marks=6,
+                           unit='',vertical=False, 
                            ):
     n = len(vec)
     st = n//n_marks
-
-
     marks = { f"{i}": f"{vec[i]:.2f} {unit}"
         for i in range(0,n,st)}
     min_val = 0
@@ -50,151 +58,132 @@ def create_idx_rangeslider(id,vec,n_marks=6,unit='',vertical=False,
                                className=f"rgslider{id}",
                              min=min_val,
                              max=max_val,
-                             value=[0,n//2,n-1    ],
+                             value=[min_val,n//2,max_val],
                              step=1,
                              marks=marks,
                              vertical=vertical,
+                             persistence=True, persistence_type='memory'
                              )
     return rgslider
+#%% elemenmts in layout
+
+
+rg_b_pajama = create_idx_rangeslider("b-pajama",B,unit="T",vertical=False)
+vcte_pajama = dcc.Graph(id="vcte-pajama", figure=f_v,className="pajama-short-fig")
+
+
+#persistence is not working for inputs and sliders
+# it's seems it's a problem with the callbacks
+inp_Bmin = dbc.Input(id="Bmin",
+                    value=f"{B.min():.4f} ",#Bmin es el minimo de B o sea B[-1]
+                    className="pajama-input",
+                    #persistence=True, persistence_type='memory',
+                    debounce=True)
+inp_Bmax = dbc.Input(id="Bmax", 
+                    value=f"{B.max():.4f}",
+                    className="pajama-input",
+                    debounce=True)
+inp_Bsel = dbc.Input(id="Bsel",
+                    value=f"{B.mean():.4f}",
+                    className="pajama-input",
+                    debounce=True)
+
+inp_B = dbc.InputGroup([ inp_Bmin, inp_Bsel, inp_Bmax ])
+
+
+inp_Vmin = dbc.Input(id="Vmin",
+                    value=f"{V.min():.2f} ",#Bmin es el minimo de B o sea B[-1]
+                    className="pajama-input",
+                    debounce=True)
+inp_Vmax = dbc.Input(id="Vmax",
+                    value=f"{V.max():.2f}",
+                    className="pajama-input",
+                    debounce=True)
+inp_Vsel = dbc.Input(id="Vsel",
+                    value=f"{ V.mean():.2f}",
+                    className="pajama-input",
+                    debounce=True)
+
+inp_V = dbc.InputGroup([ inp_Vmin, inp_Vsel, inp_Vmax ])
+
+img_pajama = dcc.Graph(id="img-graph", figure=f_img,className="m-0")
+
+
+rg_v_pajama = create_idx_rangeslider("v-pajama",V,unit="mV",vertical=True)
+bcte_pajama = dcc.Graph(id="bcte-pajama", figure=f_b,className="pajama-narrow-fig")
+
+
+btn_tr_vcte = dbc.Button(" Download V-trace", 
+                         id ="btn-dwnld-vcte",
+                         n_clicks=0,className='fa fa-download mr-1')
+    
+btn_tr_bcte = dbc.Button(" Download B-trace",
+                         id ="btn-dwnld-bcte",
+                         n_clicks=0,className='fa fa-download mr-1')
+
+btn_img = dbc.Button(" Download image",
+                        id ="btn-dwnld-img",
+                        n_clicks=0,className='fa fa-download mr-1')
+
+
+# vamos a dividir el layout del pajama en un 2x2, es una columna c/2 filas
+# la primera fila tiene 2 cols: slider_plot || txtInp
+# la segunda fila tiene 2 cols: image || plot_slider
+
+slider_plot = Col([ rg_b_pajama,
+                    vcte_pajama,
+                ], width = 8, className="m-0")
+
+
+txtInp = Col([ #este col bloque txt y 2 inp en misma fila
+            Row([ html.P("B range (min,sel,max) [T]")], className="m-0"),
+
+            # Row([Col([inp_Bmin], width=4, className="m-0"), 
+            #      Col([inp_Bsel], width=4, className="m-0"),
+            #      Col([inp_Bmax], width=4, className="m-0"),
+            #      ],className="m-0"),
+            Row([ inp_B], className="m-0"),
+            Row([ html.P("V range (min,sel,max) [mV]")], className="m-0"),
+
+            Row([ inp_V], className="m-0"),
+            # Row([Col([inp_Vmin], width=4, className="m-0"),
+            #     Col([inp_Vsel], width=4, className="m-0"),
+            #     Col([inp_Vmax], width=4, className="m-0"),
+            #     ],className="m-0"),
+            
+        ], width=4)
+
+
+image = Col([img_pajama], width=8, className="m-0")
+
+plot_slider = Col([
+                Row([
+                    Col([bcte_pajama,],width=10, className="m-0"),
+                    Col([rg_v_pajama,], width=2, className="m-0")],
+                className="m-0")
+               ],width=3)
+
+
+btns = Col([btn_tr_vcte,
+            btn_tr_bcte,
+            btn_img], width=12, className="m-0")
 
 #%%
 
-#----------------- Segunda columna----------------------------
+#----------------- Columna de pajama----------------------------
 shared_pajama =  Col([ #la segunda columna va a tener la parte de varios graficos
       Row([ #fila 1 : slider-plot || txt-inp
-        Col([
-          create_idx_rangeslider("b-pajama-3dplot",B,unit="T",vertical=False),
-          dcc.Graph(id="vcte-pajama-3dplot", figure=f_v,className="pajama-short-fig"), 
-        ], width=8),
-        Col([ #este col bloque txt y 2 inp en misma fila
-            Row([
-              html.P("B range (min,max) [T]"),
-              Col([
-                dbc.Input(id="Bmin-3dplot", # type="number",
-                           value=f"{B.min():.2f} ",#Bmin es el minimo de B o sea B[-1]
-                          className="pajama-input"),   
-              ], width=6),
-              Col([
-                dbc.Input(id="Bmax-3dplot", #type="number",
-                           value=f"{B.max():.2f}",
-                          className="pajama-input"),
-              ], width=6),
-            ]), 
-            Row([
-              html.P("V range (min,max) [mV]"),
-              Col([
-                dbc.Input(id="Vmin-3dplot", # type="number",
-                           value=f"{V.min():.2f}",
-                          className="pajama-input"),   
-              ], width=6),
-              Col([
-                dbc.Input(id="Vmax-3dplot", #type="number",
-                           value=f"{V.max():.2f}",
-                          className="pajama-input"),
-              ], width=6),
-            ]),  
-        ], width=4),  
-      ], className="pajama-row1"),  
+        slider_plot,
+        txtInp,      ], className="h-20"),#pajama-row1"),  
       html.Br(), 
       Row([ #fila 2 de la parte derecha : imagen || plot-slider
-        Col([# f2 col1: imagen
-          dcc.Graph(id="img-graph-3dplot", figure=f_img,),
-        ],width=8),
-        Col([# f2 col2: plot-slider
-          Row([
-            Col([ 
-                dcc.Graph(id="bcte-pajama-3dplot", figure=f_b,className="pajama-narrow-fig"),
-            ],width=9),
-            Col([  
-                create_idx_rangeslider("v-pajama-3dplot",V,unit="nm",vertical=True),
-            ],width=3),
-          ]),
-        ],width=4),
-      ], className="pajama-row2"),
-    ], className="col50width")
+        image,
+        plot_slider,      ], className="h-80"),#"pajama-row2"),
+      Row([ btns], className="h-10"),
+      dcc.Download(id='Download'),#"pajama-row3"),
+    ], className="w-50 h-100 ms-0 me-10")#"col50width")
 
 
 #%%
 
 
-
-
-# @callback(Output("rgslider-b-pajama-3dplot", "value"),
-#            Output("vcte-pajama-3dplot", "figure"),
-#            Output("Bmin-3dplot", "value"),
-#            Output("Bmax-3dplot", "value"),
-#            Output("Vmin-3dplot", "value"),
-#            Output("Vmax-3dplot", "value"),
-#            Output("img-graph-3dplot", "figure"),
-#            Output("bcte-pajama-3dplot", "figure"),
-#            Output("rgslider-v-pajama-3dplot", "value"),
-#           [Input("rgslider-b-pajama-3dplot", "value"),
-#            Input("rgslider-v-pajama-3dplot", "value"),
-#            Input("Bmin-3dplot", "value"),
-#            Input("Bmax-3dplot", "value"),
-#            Input("Vmin-3dplot", "value"),
-#            Input("Vmax-3dplot", "value"),],
-#            State("shared-data", "data"),
-#           )
-# def update_pajama(B_rang,V_rang,bm,bM,vm,vM,data):
-#     event = ctx.triggered_id
-#     print(event)
-#     if event is None:
-#         return no_update,no_update,no_update,\
-#                 no_update,no_update,no_update,\
-#                 no_update,no_update,no_update
-        
-#     B,V,r = np.array(data['B']),np.array(data['V']),np.array(data['r'])
-#     if event == "rgslider-b-pajama-3dplot":
-#         #change bm and bM
-#         bM = f"{B[B_rang[0]]:.2f}" #aca el 0 es el max
-#         bm = f"{B[B_rang[2]]:.2f}" #aca el 2 es el min
-#     if event == "rgslider-v-pajama-3dplot":
-#         #change vm and vM
-#         vm = f"{V[V_rang[0]]:.2f}" #aca el 0 es el min
-#         vM = f"{V[V_rang[2]]:.2f}" #aca el 2 es el max
-    
-#     if event in ["Bmin-3dplot","Bmax-3dplot"]:
-#         #change B_rang finding nearest indices
-#         bM = utpj.tryfloat(bM)
-#         bm = utpj.tryfloat(bm)
-#         if not (bM is None or bm is None):
-#             ibM = np.argmin(np.abs(B-bM))
-#             ibm = np.argmin(np.abs(B-bm))
-#             #check if B_rang[1] is in limits if no replace for nearest
-#             B_rang[0] = ibM
-#             B_rang[2] = ibm
-#             if ibM < B_rang[1]:
-#                 B_rang[1] = ibM
-#             if ibm > B_rang[1]:
-#                 B_rang[1] = ibm
-#     if event in ["Vmin-3dplot","Vmax-3dplot"]:
-#         #change V_rang finding nearest indices
-#         vM = utpj.tryfloat(vM)
-#         vm = utpj.tryfloat(vm)
-#         if not (vM is None or vm is None):
-#             ivM = np.argmin(np.abs(V-vM))
-#             ivm = np.argmin(np.abs(V-vm))
-#             #check if V_rang[1] is in limits if no replace for nearest
-#             V_rang[0] = ivm
-#             V_rang[2] = ivM
-#             if ivM < V_rang[1]:
-#                 V_rang[1] = ivM
-#             if ivm > V_rang[1]:
-#                 V_rang[1] = ivm
-        
-#     #update figs
-#     bcte_dic = utpj.update_Bcte_val(B,V,r,B_rang,V_rang)
-#     vcte_dic = utpj.update_Vcte_val(B,V,r,B_rang,V_rang)
-#     img_dic  = utpj.update_img_val(B,V,r,B_rang,V_rang)
-#     patched_bcte = Patch()
-#     patched_vcte = Patch()
-#     patched_img  = Patch()
-#     patched_bcte = utpj.update_Bcte_trace(patched_bcte,bcte_dic)
-#     patched_vcte = utpj.update_Vcte_trace(patched_vcte,vcte_dic)
-#     patched_img  = utpj.update_img_trace(patched_img,img_dic)
-    
-#     print(B_rang)
-#     return B_rang, patched_vcte, bm, bM, \
-#             vm, vM, patched_img, patched_bcte, V_rang
- 
